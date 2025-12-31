@@ -1,4 +1,4 @@
-# sp-fx-document-template-picker
+# spfx-document-template-picker
 
 ## Summary
 

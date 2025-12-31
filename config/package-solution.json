@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
-    "name": "sp-fx-document-template-picker-client-side-solution",
+    "name": "spfx-document-template-picker-client-side-solution",
     "id": "a4007a95-d3f8-4861-9b9b-ba7b48a242f2",
     "version": "1.0.0.0",
     "includeClientSideAssets": true,
@@ -27,14 +27,14 @@
     },
     "features": [
       {
-        "title": "sp-fx-document-template-picker Feature",
-        "description": "The feature that activates elements of the sp-fx-document-template-picker solution.",
+        "title": "spfx-document-template-picker Feature",
+        "description": "The feature that activates elements of the spfx-document-template-picker solution.",
         "id": "cc518a5b-0197-4a57-81f2-dae746659655",
         "version": "1.0.0.0"
       }
     ]
   },
   "paths": {
-    "zippedPackage": "solution/sp-fx-document-template-picker.sppkg"
+    "zippedPackage": "solution/spfx-document-template-picker.sppkg"
   }
 }

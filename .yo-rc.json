@@ -5,7 +5,7 @@
     "nodeVersion": "20.19.1",
     "sdksVersions": {},
     "version": "1.21.1",
-    "libraryName": "sp-fx-document-template-picker",
+    "libraryName": "spfx-document-template-picker",
     "libraryId": "a4007a95-d3f8-4861-9b9b-ba7b48a242f2",
     "environment": "spo",
     "packageManager": "npm",
