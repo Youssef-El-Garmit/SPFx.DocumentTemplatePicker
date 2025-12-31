@@ -1,0 +1,20 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "document-template-picker-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/documentTemplatePicker/DocumentTemplatePickerWebPart.js",
+          "manifest": "./src/webparts/documentTemplatePicker/DocumentTemplatePickerWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "DocumentTemplatePickerWebPartStrings": "lib/webparts/documentTemplatePicker/loc/{locale}.js",
+    "ComponentStrings": "lib/webparts/documentTemplatePicker/components/loc/{locale}.js",
+    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
+  }
+}
