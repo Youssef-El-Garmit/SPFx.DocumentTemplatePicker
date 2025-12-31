@@ -2,6 +2,7 @@ import { WebPartContext } from '@microsoft/sp-webpart-base';
 
 export interface IDocumentTemplatePickerProps {
   context: WebPartContext;
+  webPartTitle?: string;
   templatesLibraryId: string;
   templatesLibraryTitle: string;
   templatesLibraryWebUrl?: string;
@@ -9,6 +10,7 @@ export interface IDocumentTemplatePickerProps {
   destinationLibraryTitle: string;
   destinationLibraryWebUrl?: string;
   allowCreateAtRoot: boolean;
+  showPreviewColumn: boolean;
   onConfigure: () => void;
 }
 

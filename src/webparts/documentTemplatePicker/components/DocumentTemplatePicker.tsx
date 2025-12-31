@@ -67,7 +67,6 @@ interface IComponentState {
 }
 
 export default class DocumentTemplatePicker extends React.Component<IDocumentTemplatePickerProps, IComponentState> {
-  private _columns: IColumn[];
   private _destinationSelection: Selection;
   private _sharePointService: SharePointService;
   private _searchTimeout: NodeJS.Timeout | undefined;
@@ -77,63 +76,6 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
     
     // Initialize SharePoint service
     this._sharePointService = new SharePointService(props.context);
-    
-    this._columns = [
-      {
-        key: 'icon',
-        name: '',
-        fieldName: 'fileIcon',
-        minWidth: 50,
-        maxWidth: 50,
-        onRender: (item: ITemplateItem) => (
-          <Icon iconName={FileUtils.getFileIcon(item.name)} className={styles.fileIcon} />
-        )
-      },
-      {
-        key: 'name',
-        name: strings.Column_Title,
-        fieldName: 'name',
-        minWidth: 300,
-        onRender: (item: ITemplateItem) => (
-          <Stack>
-            <Link onClick={() => item.isFolder ? this._navigateToFolder(item) : this._showPreview(item)} className={styles.titleLink}>
-              {item.name}
-            </Link>
-          </Stack>
-        )
-      },
-      {
-        key: 'preview',
-        name: strings.Column_Preview,
-        fieldName: 'preview',
-        minWidth: 150,
-        maxWidth: 200,
-        onRender: (item: ITemplateItem) => {
-          if (item.isFolder) return <></>;
-          
-          return (
-            <div className={styles.previewThumbnail} onClick={() => this._showPreview(item)}>
-              {item.thumbnailUrl ? (
-                <Image 
-                  src={item.thumbnailUrl} 
-                  alt={item.name}
-                  imageFit={ImageFit.cover}
-                  className={styles.thumbnailImage}
-                  onError={(e: any) => {
-                    // Fallback to icon if thumbnail fails
-                    e.target.style.display = 'none';
-                    e.target.parentElement.querySelector(`.${styles.thumbnailPlaceholder}`).style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div className={styles.thumbnailPlaceholder} style={{ display: item.thumbnailUrl ? 'none' : 'flex' }}>
-                <Icon iconName={item.fileIcon} className={styles.thumbnailIcon} />
-              </div>
-            </div>
-          );
-        }
-      }
-    ];
 
     this.state = {
       items: [],
@@ -180,7 +122,7 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
   }
 
   public componentDidMount(): void {
-    if (this.props.templatesLibraryId) {
+    if (this.props.templatesLibraryId && this._isValidGuid(this.props.templatesLibraryId)) {
       void this._loadItems();
     }
   }
@@ -188,12 +130,27 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
   public componentDidUpdate(prevProps: IDocumentTemplatePickerProps): void {
     if (prevProps.templatesLibraryId !== this.props.templatesLibraryId || 
         prevProps.destinationLibraryId !== this.props.destinationLibraryId) {
-      void this._loadItems();
+      // Only load if we have a valid GUID
+      if (this.props.templatesLibraryId && this._isValidGuid(this.props.templatesLibraryId)) {
+        void this._loadItems();
+      } else {
+        // Clear items if GUID is invalid
+        this.setState({ items: [], folders: [], loading: false, error: undefined });
+      }
     }
   }
 
+  private _isValidGuid(guid: string): boolean {
+    if (!guid || typeof guid !== 'string') {
+      return false;
+    }
+    // GUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return guidRegex.test(guid.trim());
+  }
+
   private async _loadItems(folderPath: string = ''): Promise<void> {
-    if (!this.props.templatesLibraryId) {
+    if (!this.props.templatesLibraryId || !this._isValidGuid(this.props.templatesLibraryId)) {
       this.setState({ items: [], folders: [], loading: false, error: undefined });
       return;
     }
@@ -236,6 +193,72 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
     }
   }
 
+
+  private _getColumns(): IColumn[] {
+    const columns: IColumn[] = [
+      {
+        key: 'icon',
+        name: '',
+        fieldName: 'fileIcon',
+        minWidth: 50,
+        maxWidth: 50,
+        onRender: (item: ITemplateItem) => (
+          <Icon iconName={FileUtils.getFileIcon(item.name)} className={styles.fileIcon} />
+        )
+      },
+      {
+        key: 'name',
+        name: strings.Column_Title,
+        fieldName: 'name',
+        minWidth: 1,
+        flexGrow: 1,
+        onRender: (item: ITemplateItem) => (
+          <Stack>
+            <Link onClick={() => item.isFolder ? this._navigateToFolder(item) : this._showPreview(item)} className={styles.titleLink}>
+              {item.name}
+            </Link>
+          </Stack>
+        )
+      }
+    ];
+
+    // Add Preview column only if enabled
+    if (this.props.showPreviewColumn) {
+      columns.push({
+        key: 'preview',
+        name: strings.Column_Preview,
+        fieldName: 'preview',
+        minWidth: 150,
+        maxWidth: 200,
+        onRender: (item: ITemplateItem) => {
+          if (item.isFolder) return <></>;
+          
+          return (
+            <div className={styles.previewThumbnail} onClick={() => this._showPreview(item)}>
+              {item.thumbnailUrl ? (
+                <Image 
+                  src={item.thumbnailUrl} 
+                  alt={item.name}
+                  imageFit={ImageFit.cover}
+                  className={styles.thumbnailImage}
+                  onError={(e: any) => {
+                    // Fallback to icon if thumbnail fails
+                    e.target.style.display = 'none';
+                    e.target.parentElement.querySelector(`.${styles.thumbnailPlaceholder}`).style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div className={styles.thumbnailPlaceholder} style={{ display: item.thumbnailUrl ? 'none' : 'flex' }}>
+                <Icon iconName={item.fileIcon} className={styles.thumbnailIcon} />
+              </div>
+            </div>
+          );
+        }
+      });
+    }
+
+    return columns;
+  }
 
   private _navigateToRoot = (): void => {
     void this._loadItems('');
@@ -342,7 +365,7 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
 
 
   private async _loadDestinationFolders(folderPath: string = '', append: boolean = false, searchQuery: string = ''): Promise<void> {
-    if (!this.props.destinationLibraryId) {
+    if (!this.props.destinationLibraryId || !this._isValidGuid(this.props.destinationLibraryId)) {
       this.setState({ destinationFolders: [], currentDestinationFolder: '', destinationLoading: false, destinationLoadingMore: false, destinationTotalLoaded: 0 });
       return;
     }
@@ -594,8 +617,9 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
       showDialog
     } = this.state;
 
-    // Empty state - no configuration
-    if (!templatesLibraryId || !destinationLibraryId) {
+    // Empty state - no configuration or invalid GUIDs
+    if (!templatesLibraryId || !this._isValidGuid(templatesLibraryId) || 
+        !destinationLibraryId || !this._isValidGuid(destinationLibraryId)) {
       return (
         <section className={styles.documentTemplatePicker}>
           <div className={styles.emptyState}>
@@ -628,6 +652,13 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
     return (
       <section className={styles.documentTemplatePicker}>
         <Stack tokens={{ childrenGap: 12 }}>
+          {/* Web Part Title */}
+          {this.props.webPartTitle && (
+            <Text variant="xxLarge" className={styles.webPartTitle}>
+              {this.props.webPartTitle}
+            </Text>
+          )}
+          
           {/* Search */}
           <SearchBox
             placeholder={strings.SearchPlaceholder_Templates}
@@ -691,7 +722,7 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
             /* DetailsList */
             <DetailsList
               items={filteredItems}
-              columns={this._columns}
+              columns={this._getColumns()}
               selectionMode={SelectionMode.none}
               className={styles.detailsList}
             />

@@ -5,6 +5,7 @@ import {
   type IPropertyPaneConfiguration,
   PropertyPaneCheckbox,
   PropertyPaneDropdown,
+  PropertyPaneTextField,
   IPropertyPaneDropdownOption
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
@@ -19,6 +20,7 @@ import DocumentTemplatePicker from './components/DocumentTemplatePicker';
 import { IDocumentTemplatePickerProps } from './components/IDocumentTemplatePickerProps';
 
 export interface IDocumentTemplatePickerWebPartProps {
+  webPartTitle?: string;
   templatesSiteUrl?: string;
   templatesLibraryId: string;
   templatesLibraryTitle: string;
@@ -28,6 +30,7 @@ export interface IDocumentTemplatePickerWebPartProps {
   destinationLibraryTitle: string;
   destinationLibraryWebUrl?: string;
   allowCreateAtRoot: boolean;
+  showPreviewColumn: boolean;
 }
 
 export default class DocumentTemplatePickerWebPart extends BaseClientSideWebPart<IDocumentTemplatePickerWebPartProps> {
@@ -50,6 +53,8 @@ export default class DocumentTemplatePickerWebPart extends BaseClientSideWebPart
         destinationLibraryTitle: this.properties.destinationLibraryTitle,
         destinationLibraryWebUrl: this.properties.destinationLibraryWebUrl,
         allowCreateAtRoot: this.properties.allowCreateAtRoot !== undefined ? this.properties.allowCreateAtRoot : false,
+        showPreviewColumn: this.properties.showPreviewColumn !== undefined ? this.properties.showPreviewColumn : true,
+        webPartTitle: this.properties.webPartTitle,
         onConfigure: this._onConfigure.bind(this)
       }
     );
@@ -188,6 +193,12 @@ export default class DocumentTemplatePickerWebPart extends BaseClientSideWebPart
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
+    console.log('templatesLibraryOptions',this._templatesLibraryOptions);
+    console.log('destinationLibraryOptions',this._destinationLibraryOptions);
+    console.log('selectedTemplatesLibrary',`${this.properties.templatesLibraryId}|${this.properties.templatesLibraryWebUrl || this.context.pageContext.web.absoluteUrl}`);
+    console.log('selectedDestinationLibrary',`${this.properties.destinationLibraryId}|${this.properties.destinationLibraryWebUrl || this.context.pageContext.web.absoluteUrl}`);
+    console.log('seletctedT',this._templatesLibraryOptions.find(option => option.key === `${this.properties.templatesLibraryId}|${this.properties.templatesLibraryWebUrl || this.context.pageContext.web.absoluteUrl}`));
+    
     return {
       pages: [
         {
@@ -195,6 +206,16 @@ export default class DocumentTemplatePickerWebPart extends BaseClientSideWebPart
             description: strings.PropertyPaneDescription
           },
           groups: [
+            {
+              groupName: 'Web Part Title',
+              groupFields: [
+                PropertyPaneTextField('webPartTitle', {
+                  label: 'Title',
+                  description: 'Enter a custom title to display at the top of the web part',
+                  value: this.properties.webPartTitle
+                })
+              ]
+            },
             {
               groupName: strings.TemplatesLibraryGroupName,
               groupFields: [
@@ -206,11 +227,11 @@ export default class DocumentTemplatePickerWebPart extends BaseClientSideWebPart
                 PropertyPaneDropdown('templatesLibraryId', {
                   label: strings.TemplatesLibraryFieldLabel,
                   options: this._templatesLibraryOptions,
-                  selectedKey: this.properties.templatesLibraryId
-                    ? (this.properties.templatesLibraryWebUrl
-                        ? `${this.properties.templatesLibraryId}|${this.properties.templatesLibraryWebUrl}`
-                        : `${this.properties.templatesLibraryId}|${this.context.pageContext.web.absoluteUrl}`)
-                    : undefined
+                  selectedKey: `${this.properties.templatesLibraryId}|${this.properties.templatesLibraryWebUrl || this.context.pageContext.web.absoluteUrl}`
+                }),
+                PropertyPaneCheckbox('showPreviewColumn', {
+                  text: 'Show Preview column',
+                  checked: this.properties.showPreviewColumn !== undefined ? this.properties.showPreviewColumn : true
                 })
               ]
             },
@@ -225,11 +246,7 @@ export default class DocumentTemplatePickerWebPart extends BaseClientSideWebPart
                 PropertyPaneDropdown('destinationLibraryId', {
                   label: strings.DestinationLibraryFieldLabel,
                   options: this._destinationLibraryOptions,
-                  selectedKey: this.properties.destinationLibraryId
-                    ? (this.properties.destinationLibraryWebUrl
-                        ? `${this.properties.destinationLibraryId}|${this.properties.destinationLibraryWebUrl}`
-                        : `${this.properties.destinationLibraryId}|${this.context.pageContext.web.absoluteUrl}`)
-                    : undefined
+                  selectedKey: `${this.properties.destinationLibraryId}|${this.properties.destinationLibraryWebUrl || this.context.pageContext.web.absoluteUrl}`
                 }),
                 PropertyPaneCheckbox('allowCreateAtRoot', {
                   text: 'Allow creating documents at root of destination library',

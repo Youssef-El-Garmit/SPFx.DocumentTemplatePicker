@@ -4,7 +4,14 @@
   overflow: hidden;
   padding: 1.5em;
   color: var(--neutralPrimary);
-  min-height: 500px;
+}
+
+.webPartTitle {
+  font-weight: 600;
+  color: var(--neutralPrimary);
+  margin-bottom: 0.5em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--neutralLight);
 }
 
 .headerTitle {
@@ -89,7 +96,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 500px;
   background-color: var(--neutralLighter);
   border-radius: 8px;
   padding: 3em;
