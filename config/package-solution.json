@@ -3,7 +3,7 @@
   "solution": {
     "name": "spfx-document-template-picker-client-side-solution",
     "id": "a4007a95-d3f8-4861-9b9b-ba7b48a242f2",
-    "version": "1.0.0.0",
+    "version": "1.0.0.1",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,

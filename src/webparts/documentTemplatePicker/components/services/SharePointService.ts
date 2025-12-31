@@ -23,20 +23,25 @@ export class SharePointService {
   /**
    * Load templates (files and folders) from a library
    */
-  async loadTemplates(libraryId: string, folderPath: string = ''): Promise<{
+  async loadTemplates(libraryId: string, folderPath: string = '', webUrl?: string): Promise<{
     items: ITemplateItem[];
     folders: IFolderItem[];
     libraryRootUrl: string;
   }> {
-    const sp = spfi().using(SPFx(this.context));
+    // Create SP instance - use different web if webUrl is provided and different from current
+    const sp = webUrl && webUrl !== this.context.pageContext.web.absoluteUrl
+      ? spfi(webUrl).using(SPFx(this.context))
+      : spfi().using(SPFx(this.context));
+    
+    const targetWeb = sp.web;
 
-    const list = sp.web.lists.getById(libraryId);
+    const list = targetWeb.lists.getById(libraryId);
     const rootFolder = await list.rootFolder();
     const libraryRootUrl = rootFolder.ServerRelativeUrl;
     const folderServerRelativeUrl = folderPath || libraryRootUrl;
     
     // Get folders (excluding hidden folders)
-    const folder = sp.web.getFolderByServerRelativePath(folderServerRelativeUrl);
+    const folder = targetWeb.getFolderByServerRelativePath(folderServerRelativeUrl);
     const allFolders = await folder.folders.select('Name', 'ServerRelativeUrl', 'Properties')();
     
     // Filter out hidden folders
@@ -63,12 +68,12 @@ export class SharePointService {
       path: f.ServerRelativeUrl
     }));
 
-    const webUrl = this.context.pageContext.web.absoluteUrl;
+    const effectiveWebUrl = webUrl || this.context.pageContext.web.absoluteUrl;
     const fileItems: ITemplateItem[] = files.map((f: any) => {
-      const fileUrl = f.ServerRedirectedEmbedUrl || `${webUrl}${f.ServerRelativeUrl}`;
+      const fileUrl = f.ServerRedirectedEmbedUrl || `${effectiveWebUrl}${f.ServerRelativeUrl}`;
       const uniqueId = f.ListItemAllFields?.UniqueId;
-      const thumbnailUrl = UrlUtils.getThumbnailUrl(f.ServerRelativeUrl, webUrl);
-      const previewUrl = UrlUtils.getPreviewUrl(uniqueId, f.ServerRelativeUrl, f.Name, webUrl);
+      const thumbnailUrl = UrlUtils.getThumbnailUrl(f.ServerRelativeUrl, effectiveWebUrl);
+      const previewUrl = UrlUtils.getPreviewUrl(uniqueId, f.ServerRelativeUrl, f.Name, effectiveWebUrl);
       
       return {
         key: f.ServerRelativeUrl,
@@ -124,15 +129,21 @@ export class SharePointService {
     folderPath: string = '',
     pageSize: number = 50,
     skip: number = 0,
-    searchQuery: string = ''
+    searchQuery: string = '',
+    webUrl?: string
   ): Promise<{
     folders: IFolderItem[];
     hasMore: boolean;
     libraryRootUrl: string;
   }> {
-    const sp = spfi().using(SPFx(this.context));
+    // Create SP instance - use different web if webUrl is provided and different from current
+    const sp = webUrl && webUrl !== this.context.pageContext.web.absoluteUrl
+      ? spfi(webUrl).using(SPFx(this.context))
+      : spfi().using(SPFx(this.context));
+    
+    const targetWeb = sp.web;
 
-    const list = sp.web.lists.getById(libraryId);
+    const list = targetWeb.lists.getById(libraryId);
     const rootFolder = await list.rootFolder();
     const folderServerRelativeUrl = folderPath || rootFolder.ServerRelativeUrl;
     
@@ -141,11 +152,11 @@ export class SharePointService {
     
     // If searching, use SharePoint Search API with ParentLink filter
     if (searchQuery) {
-      folders = await this.searchFolders(folderServerRelativeUrl, searchQuery, pageSize, skip);
+      folders = await this.searchFolders(folderServerRelativeUrl, searchQuery, pageSize, skip, webUrl);
       hasMore = folders.length === pageSize;
     } else {
       // Use REST API for normal folder loading
-      const folder = sp.web.getFolderByServerRelativePath(folderServerRelativeUrl);
+      const folder = targetWeb.getFolderByServerRelativePath(folderServerRelativeUrl);
       
       let query = folder.folders
         .select('Name', 'ServerRelativeUrl')
@@ -188,7 +199,8 @@ export class SharePointService {
     folderServerRelativeUrl: string,
     searchQuery: string,
     pageSize: number,
-    skip: number
+    skip: number,
+    webUrl?: string
   ): Promise<IFolderItem[]> {
     const sp = spfi().using(SPFx(this.context));
     
@@ -196,9 +208,11 @@ export class SharePointService {
     const escapedQuery = searchQuery.replace(/"/g, '\\"');
     const searchQueryText = `*${escapedQuery}*`;
     
-    // Get web URLs
-    const webAbsoluteUrl = this.context.pageContext.web.absoluteUrl;
-    const webServerRelativeUrl = this.context.pageContext.web.serverRelativeUrl;
+    // Get web URLs - use provided webUrl or current web
+    const webAbsoluteUrl = webUrl || this.context.pageContext.web.absoluteUrl;
+    const webServerRelativeUrl = webUrl 
+      ? new URL(webUrl).pathname
+      : this.context.pageContext.web.serverRelativeUrl;
     
     // Build ParentLink filter
     let folderRelativePath = folderServerRelativeUrl;
@@ -285,18 +299,33 @@ export class SharePointService {
   /**
    * Copy a file from source to destination
    */
-  async copyFile(sourceServerRelativeUrl: string, destinationServerRelativeUrl: string): Promise<{
+  async copyFile(
+    sourceServerRelativeUrl: string, 
+    destinationServerRelativeUrl: string,
+    sourceWebUrl?: string,
+    destinationWebUrl?: string
+  ): Promise<{
     serverRelativeUrl: string;
     uniqueId: string;
   }> {
-    const sp = spfi().using(SPFx(this.context));
+    // Create SP instances for source and destination webs
+    const sourceSp = sourceWebUrl && sourceWebUrl !== this.context.pageContext.web.absoluteUrl
+      ? spfi(sourceWebUrl).using(SPFx(this.context))
+      : spfi().using(SPFx(this.context));
+    
+    const destinationSp = destinationWebUrl && destinationWebUrl !== this.context.pageContext.web.absoluteUrl
+      ? spfi(destinationWebUrl).using(SPFx(this.context))
+      : spfi().using(SPFx(this.context));
+    
+    const sourceWeb = sourceSp.web;
+    const destinationWeb = destinationSp.web;
     
     // Copy file using copyByPath
-    const sourceFile = sp.web.getFileByServerRelativePath(sourceServerRelativeUrl);
+    const sourceFile = sourceWeb.getFileByServerRelativePath(sourceServerRelativeUrl);
     await sourceFile.copyByPath(destinationServerRelativeUrl, true, true);
     
     // Get the created file
-    const createdFile = sp.web.getFileByServerRelativePath(destinationServerRelativeUrl);
+    const createdFile = destinationWeb.getFileByServerRelativePath(destinationServerRelativeUrl);
     const fileData = await createdFile.select('ServerRelativeUrl')();
     const listItemData = await createdFile.listItemAllFields.select('UniqueId')();
     

@@ -201,7 +201,11 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
     this.setState({ loading: true, error: undefined });
 
     try {
-      const result = await this._sharePointService.loadTemplates(this.props.templatesLibraryId, folderPath);
+      const result = await this._sharePointService.loadTemplates(
+        this.props.templatesLibraryId, 
+        folderPath,
+        this.props.templatesLibraryWebUrl
+      );
       const folderServerRelativeUrl = folderPath || result.libraryRootUrl;
       
       const breadcrumbItems = BreadcrumbUtils.buildBreadcrumb({
@@ -359,7 +363,8 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
         folderPath,
         pageSize,
         skip,
-        searchQuery
+        searchQuery,
+        this.props.destinationLibraryWebUrl
       );
       
       const folderServerRelativeUrl = folderPath || result.libraryRootUrl;
@@ -462,8 +467,13 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
     this.setState({ copying: true, dialogMessage: undefined, dialogMessageType: undefined });
 
     try {
-      const result = await this._sharePointService.copyFile(selectedTemplate.serverRelativeUrl, destinationUrl);
-      const webUrl = this.props.context.pageContext.web.absoluteUrl;
+      const result = await this._sharePointService.copyFile(
+        selectedTemplate.serverRelativeUrl, 
+        destinationUrl,
+        this.props.templatesLibraryWebUrl,
+        this.props.destinationLibraryWebUrl
+      );
+      const webUrl = this.props.destinationLibraryWebUrl || this.props.context.pageContext.web.absoluteUrl;
       const fileUrl = UrlUtils.buildFullUrl(result.serverRelativeUrl, webUrl);
       const isOfficeDocument = FileUtils.isOfficeDocument(selectedTemplate.name);
 

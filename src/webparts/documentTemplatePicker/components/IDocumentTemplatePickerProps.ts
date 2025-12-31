@@ -4,8 +4,10 @@ export interface IDocumentTemplatePickerProps {
   context: WebPartContext;
   templatesLibraryId: string;
   templatesLibraryTitle: string;
+  templatesLibraryWebUrl?: string;
   destinationLibraryId: string;
   destinationLibraryTitle: string;
+  destinationLibraryWebUrl?: string;
   allowCreateAtRoot: boolean;
   onConfigure: () => void;
 }
