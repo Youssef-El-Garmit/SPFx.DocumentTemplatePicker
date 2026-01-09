@@ -13,10 +13,16 @@ define([], function () {
             Button_Creating: "Création en cours...",
             Button_Configure: "Configurer",
             Button_OpenDocument: "Ouvrir le document",
+            Button_Confirm: "Confirmer",
+            Button_Cancel: "Annuler",
 
             // Search placeholders
             SearchPlaceholder_Templates: "Rechercher des modèles...",
             SearchPlaceholder_Folders: "Rechercher des dossiers...",
+            
+            // File name
+            Label_FileName: "Nom du fichier",
+            Placeholder_FileName: "Entrez le nom du fichier...",
 
             // Loading messages
             Loading_Templates: "Chargement des modèles...",
@@ -30,10 +36,15 @@ define([], function () {
             // Dialog
             Dialog_CloseAriaLabel: "Fermer",
             Dialog_FileType: "Document {0}",
+            Dialog_ConfirmTitle: "Confirmer le nom du fichier",
+            Dialog_ConfirmMessage: "Veuillez confirmer ou modifier le nom du fichier avant de créer le document.",
 
             // Error messages
             Error_CreatingTemplate: "Erreur lors de la création du modèle : {0}",
             Error_LoadingTemplates: "Une erreur s'est produite lors du chargement des modèles",
+            Error_FileName_Message1: "Veuillez entrer un nom qui ne contient aucun de ces",
+            Error_FileName_Message2: "caractères : \" * : < > ? / \\ |.",
+            Error_FileName_EndsWithPeriod: "Les noms de fichiers ou dossiers ne peuvent pas se terminer par : .",
 
             // Empty states - Configuration
             EmptyState_ConfigureTitle: "Configurer cette partie Web",

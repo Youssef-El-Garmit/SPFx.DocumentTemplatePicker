@@ -33,6 +33,7 @@ import { SuccessStep } from './components/SuccessStep';
 import { DialogTitle } from './components/DialogTitle';
 import { PreviewSection } from './components/PreviewSection';
 import { DestinationFolderExplorer } from './components/DestinationFolderExplorer';
+import { FileNameConfirmationDialog } from './components/FileNameConfirmationDialog';
 import { format } from '@fluentui/react';
 import { DocumentTemplatePicker as strings } from 'ComponentStrings';
 
@@ -64,6 +65,8 @@ interface IComponentState {
   destinationLoadingMore: boolean;
   destinationHasMore: boolean;
   destinationTotalLoaded: number;
+  showConfirmationDialog: boolean;
+  confirmationFileName: string;
 }
 
 export default class DocumentTemplatePicker extends React.Component<IDocumentTemplatePickerProps, IComponentState> {
@@ -104,7 +107,9 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
       destinationLoading: false,
       destinationLoadingMore: false,
       destinationHasMore: false,
-      destinationTotalLoaded: 0
+      destinationTotalLoaded: 0,
+      showConfirmationDialog: false,
+      confirmationFileName: ''
     };
 
     // Initialize selection for destination folders
@@ -203,7 +208,7 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
         minWidth: 50,
         maxWidth: 50,
         onRender: (item: ITemplateItem) => (
-          <Icon iconName={FileUtils.getFileIcon(item.name)} className={styles.fileIcon} />
+          <Icon iconName={item.isFolder ? 'Folder' : (item.fileIcon || FileUtils.getFileIcon(item.name))} className={styles.fileIcon} />
         )
       },
       {
@@ -314,7 +319,9 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
       destinationHasMore: false,
       destinationTotalLoaded: 0,
       dialogMessage: undefined,
-      dialogMessageType: undefined
+      dialogMessageType: undefined,
+      showConfirmationDialog: false,
+      confirmationFileName: item.name
     });
     this._destinationSelection.setAllSelected(false);
     void this._loadDestinationFolders('', false, '');
@@ -336,7 +343,9 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
       showSuccess: false,
       createdFileUrl: undefined,
       createdFileUniqueId: undefined,
-      isOfficeDocument: false
+      isOfficeDocument: false,
+      showConfirmationDialog: false,
+      confirmationFileName: ''
     });
   }
 
@@ -477,15 +486,35 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
     }
   }
 
+  private _onShowConfirmationDialog = (): void => {
+    const { selectedTemplate } = this.state;
+    if (!selectedTemplate) {
+      return;
+    }
+    this.setState({ 
+      showConfirmationDialog: true,
+      confirmationFileName: selectedTemplate.name
+    });
+  }
+
+  private _onCancelConfirmation = (): void => {
+    this.setState({ showConfirmationDialog: false });
+  }
+
   private async _onCreateFromTemplate(): Promise<void> {
-    const { selectedTemplate, selectedDestinationFolder, currentDestinationFolder, destinationLibraryRootUrl } = this.state;
-    if (!selectedTemplate || !this.props.destinationLibraryId) {
+    const { selectedTemplate, selectedDestinationFolder, currentDestinationFolder, destinationLibraryRootUrl, confirmationFileName } = this.state;
+    if (!selectedTemplate || !this.props.destinationLibraryId || !confirmationFileName.trim()) {
       return;
     }
 
+    // Close confirmation dialog
+    this.setState({ showConfirmationDialog: false });
+
     // Determine destination folder path
     const destinationFolderPath = selectedDestinationFolder || currentDestinationFolder || destinationLibraryRootUrl;
-    const destinationUrl = UrlUtils.buildFolderPath(destinationFolderPath, selectedTemplate.name);
+    // Trim only trailing spaces (not leading spaces) when creating, like SharePoint rename
+    const finalFileName = confirmationFileName.replace(/[ \t]+$/, '');
+    const destinationUrl = UrlUtils.buildFolderPath(destinationFolderPath, finalFileName);
 
     this.setState({ copying: true, dialogMessage: undefined, dialogMessageType: undefined });
 
@@ -595,7 +624,7 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
         <PrimaryButton
           text={copying ? strings.Button_Creating : strings.Button_CreateDocument}
           iconProps={{ iconName: copying ? undefined : 'Add' }}
-          onClick={() => { void this._onCreateFromTemplate(); }}
+          onClick={this._onShowConfirmationDialog}
           disabled={isCreateDisabled}
         />
       </DialogFooter>
@@ -761,6 +790,19 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
           {this._getDialogContent()}
           {this._getDialogFooter()}
         </Dialog>
+
+        {/* File Name Confirmation Dialog */}
+        {this.state.selectedTemplate && (
+          <FileNameConfirmationDialog
+            hidden={!this.state.showConfirmationDialog}
+            templateName={this.state.selectedTemplate.name}
+            fileName={this.state.confirmationFileName}
+            copying={this.state.copying}
+            onFileNameChange={(fileName) => this.setState({ confirmationFileName: fileName })}
+            onConfirm={() => { void this._onCreateFromTemplate(); }}
+            onCancel={this._onCancelConfirmation}
+          />
+        )}
       </section>
     );
   }

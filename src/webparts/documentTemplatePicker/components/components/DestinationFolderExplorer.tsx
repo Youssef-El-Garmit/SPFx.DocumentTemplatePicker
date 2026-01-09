@@ -87,60 +87,60 @@ export const DestinationFolderExplorer: React.FC<IDestinationFolderExplorerProps
       )}
 
       <Stack className={styles.destinationListContainer}>
-        {loading && folders.length === 0 ? (
-          <Stack horizontalAlign="center" verticalAlign="center" style={{ minHeight: '200px' }}>
-            <Spinner size={SpinnerSize.medium} label={strings.Loading_Folders} />
-          </Stack>
-        ) : folders.length === 0 ? (
-          <EmptyState
-            iconName={searchQuery ? "Search" : "Folder"}
-            title={strings.EmptyState_NoFolders}
-            description={searchQuery ? strings.EmptyState_NoFoldersDescription : strings.EmptyState_FolderEmpty}
-            inline={true}
-          />
-        ) : (
-          <Stack style={{ flex: 1, minHeight: 0, position: 'relative' }} tokens={{ childrenGap: 0 }}>
-            <div 
-              onScroll={onScroll}
-              className={styles.destinationListScrollContainer}
-              style={{ flex: 1, minHeight: 0 }}
-            >
-              {loading && folders.length > 0 && (
-                <Stack 
-                  horizontalAlign="center" 
-                  verticalAlign="center"
-                  style={{ 
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                    zIndex: 10,
-                    pointerEvents: 'none'
-                  }}
-                >
-                  <Spinner size={SpinnerSize.medium} label={strings.Loading_Folders} />
+          {loading && folders.length === 0 ? (
+            <Stack horizontalAlign="center" verticalAlign="center" style={{ minHeight: '200px' }}>
+              <Spinner size={SpinnerSize.medium} label={strings.Loading_Folders} />
+            </Stack>
+          ) : folders.length === 0 ? (
+            <EmptyState
+              iconName={searchQuery ? "Search" : "Folder"}
+              title={strings.EmptyState_NoFolders}
+              description={searchQuery ? strings.EmptyState_NoFoldersDescription : strings.EmptyState_FolderEmpty}
+              inline={true}
+            />
+          ) : (
+            <Stack style={{ flex: 1, minHeight: 0, position: 'relative' }} tokens={{ childrenGap: 0 }}>
+              <div 
+                onScroll={onScroll}
+                className={styles.destinationListScrollContainer}
+                style={{ flex: 1, minHeight: 0 }}
+              >
+                {loading && folders.length > 0 && (
+                  <Stack 
+                    horizontalAlign="center" 
+                    verticalAlign="center"
+                    style={{ 
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                      zIndex: 10,
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    <Spinner size={SpinnerSize.medium} label={strings.Loading_Folders} />
+                  </Stack>
+                )}
+                <DetailsList
+                  items={folders}
+                  columns={columns}
+                  selectionMode={SelectionMode.single}
+                  selection={selection}
+                  className={styles.detailsList}
+                  getKey={(item: IFolderItem) => item.key || item.serverRelativeUrl}
+                  onShouldVirtualize={() => false}
+                />
+              </div>
+              {loadingMore && hasMore && (
+                <Stack horizontalAlign="center" style={{ padding: '8px', flexShrink: 0 }}>
+                  <Spinner size={SpinnerSize.small} label={strings.Loading_More} />
                 </Stack>
               )}
-              <DetailsList
-                items={folders}
-                columns={columns}
-                selectionMode={SelectionMode.single}
-                selection={selection}
-                className={styles.detailsList}
-                getKey={(item: IFolderItem) => item.key || item.serverRelativeUrl}
-                onShouldVirtualize={() => false}
-              />
-            </div>
-            {loadingMore && hasMore && (
-              <Stack horizontalAlign="center" style={{ padding: '8px', flexShrink: 0 }}>
-                <Spinner size={SpinnerSize.small} label={strings.Loading_More} />
-              </Stack>
-            )}
-          </Stack>
-        )}
-      </Stack>
+            </Stack>
+          )}
+        </Stack>
     </Stack>
   );
 };

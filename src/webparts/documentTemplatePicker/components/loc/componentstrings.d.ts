@@ -11,10 +11,16 @@ declare module 'ComponentStrings' {
         Button_Creating: string;
         Button_Configure: string;
         Button_OpenDocument: string;
+        Button_Confirm: string;
+        Button_Cancel: string;
 
         // Search placeholders
         SearchPlaceholder_Templates: string;
         SearchPlaceholder_Folders: string;
+        
+        // File name
+        Label_FileName: string;
+        Placeholder_FileName: string;
 
         // Loading messages
         Loading_Templates: string;
@@ -28,10 +34,15 @@ declare module 'ComponentStrings' {
         // Dialog
         Dialog_CloseAriaLabel: string;
         Dialog_FileType: string; // "{0} Document"
+        Dialog_ConfirmTitle: string;
+        Dialog_ConfirmMessage: string;
 
         // Error messages
         Error_CreatingTemplate: string; // "Error creating template: {0}"
         Error_LoadingTemplates: string;
+        Error_FileName_Message1: string;
+        Error_FileName_Message2: string;
+        Error_FileName_EndsWithPeriod: string;
 
         // Empty states - Configuration
         EmptyState_ConfigureTitle: string;

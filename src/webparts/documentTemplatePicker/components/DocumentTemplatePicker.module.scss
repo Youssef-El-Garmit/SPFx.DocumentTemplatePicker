@@ -341,6 +341,23 @@
   max-width: 100%;
 }
 
+// File Name Confirmation Dialog Styles
+.confirmationDialog {
+  :global(.ms-Dialog-main) {
+    min-width: 500px;
+    max-width: 600px;
+  }
+}
+
+.fileNameLabel {
+  font-weight: 600;
+  color: var(--neutralPrimary);
+}
+
+.fileNameInput {
+  width: 100%;
+}
+
 /* File header styles - similar to MailRoomDialog */
 .fileIconContainer {
   width: 40px;
