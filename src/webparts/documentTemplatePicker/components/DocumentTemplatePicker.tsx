@@ -60,6 +60,7 @@ interface IComponentState {
   showSuccess: boolean;
   createdFileUrl: string | undefined;
   createdFileUniqueId: string | undefined;
+  createdFileName: string | undefined;
   isOfficeDocument: boolean;
   destinationLoading: boolean;
   destinationLoadingMore: boolean;
@@ -103,6 +104,7 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
       showSuccess: false,
       createdFileUrl: undefined,
       createdFileUniqueId: undefined,
+      createdFileName: undefined,
       isOfficeDocument: false,
       destinationLoading: false,
       destinationLoadingMore: false,
@@ -343,6 +345,7 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
       showSuccess: false,
       createdFileUrl: undefined,
       createdFileUniqueId: undefined,
+      createdFileName: undefined,
       isOfficeDocument: false,
       showConfirmationDialog: false,
       confirmationFileName: ''
@@ -350,25 +353,32 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
   }
 
   private _openCreatedFile = (): void => {
-    const { createdFileUrl, isOfficeDocument, selectedTemplate } = this.state;
+    const { createdFileUrl, createdFileName, isOfficeDocument } = this.state;
     if (!createdFileUrl) {
       return;
     }
 
-    // For Office documents, use Office protocol to open in desktop app
-    if (isOfficeDocument && selectedTemplate) {
-      const officeProtocol = FileUtils.getOfficeProtocol(selectedTemplate.name);
+    // For Office documents: try desktop app first (protocol), then open in browser with ?web=1 to avoid download
+    const fileName = createdFileName || '';
+    if (isOfficeDocument && fileName) {
+      const officeProtocol = FileUtils.getOfficeProtocol(fileName);
       if (officeProtocol) {
         try {
           window.location.href = `${officeProtocol}${createdFileUrl}`;
           return;
         } catch (error) {
-          console.warn('Failed to open with Office protocol, falling back to direct URL:', error);
+          console.warn('Failed to open with Office protocol, falling back to browser:', error);
         }
+        // Fallback: open in browser (Office Online) instead of triggering download
+        const openInBrowserUrl = createdFileUrl.indexOf('?') >= 0
+          ? `${createdFileUrl}&web=1`
+          : `${createdFileUrl}?web=1`;
+        window.open(openInBrowserUrl, '_blank');
+        return;
       }
     }
-    
-    // For non-Office documents or if Office protocol fails, use direct URL
+
+    // Non-Office documents: open direct URL
     window.open(createdFileUrl, '_blank');
   }
 
@@ -527,7 +537,7 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
       );
       const webUrl = this.props.destinationLibraryWebUrl || this.props.context.pageContext.web.absoluteUrl;
       const fileUrl = UrlUtils.buildFullUrl(result.serverRelativeUrl, webUrl);
-      const isOfficeDocument = FileUtils.isOfficeDocument(selectedTemplate.name);
+      const isOfficeDocument = FileUtils.isOfficeDocument(finalFileName);
 
       // Build success breadcrumb
       const successBreadcrumbItems = BreadcrumbUtils.buildSuccessBreadcrumb(
@@ -542,6 +552,7 @@ export default class DocumentTemplatePicker extends React.Component<IDocumentTem
         showSuccess: true,
         createdFileUrl: fileUrl,
         createdFileUniqueId: result.uniqueId,
+        createdFileName: finalFileName,
         isOfficeDocument: isOfficeDocument,
         destinationBreadcrumbItems: successBreadcrumbItems
       });
