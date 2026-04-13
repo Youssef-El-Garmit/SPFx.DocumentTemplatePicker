@@ -34,12 +34,15 @@ export const FileNameConfirmationDialog: React.FC<IFileNameConfirmationDialogPro
   onConfirm,
   onCancel
 }) => {
-  const fileExtension = FileUtils.getFileExtension(templateName);
+  const templateExtension = FileUtils.getFileExtension(templateName);
+  const fileExtension = FileUtils.getDocumentExtension(templateExtension);
   
   // Extract name without extension for display in input
   let fileNameWithoutExtension: string;
   if (fileExtension && fileName.toLowerCase().endsWith(`.${fileExtension.toLowerCase()}`)) {
     fileNameWithoutExtension = fileName.substring(0, fileName.length - fileExtension.length - 1);
+  } else if (templateExtension && fileName.toLowerCase().endsWith(`.${templateExtension.toLowerCase()}`)) {
+    fileNameWithoutExtension = fileName.substring(0, fileName.length - templateExtension.length - 1);
   } else {
     // If no extension or different extension, extract name without any extension
     const lastDotIndex = fileName.lastIndexOf('.');
