@@ -14,15 +14,15 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '22.x'
+          node-version: '18.x'
           cache: 'npm'
 
       - name: Install dependencies
@@ -60,7 +60,7 @@ jobs:
         run: npx gulp package-solution --ship
 
       - name: Upload sppkg artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: spfx-document-template-picker-v${{ steps.version.outputs.version }}
           path: sharepoint/solution/*.sppkg
