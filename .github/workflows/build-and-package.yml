@@ -54,10 +54,10 @@ jobs:
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Build solution (production)
-        run: npx gulp bundle --ship
+        run: npx gulp bundle --ship 2>&1
 
       - name: Package solution (production)
-        run: npx gulp package-solution --ship
+        run: npx gulp package-solution --ship 2>&1
 
       - name: Upload sppkg artifact
         uses: actions/upload-artifact@v5
