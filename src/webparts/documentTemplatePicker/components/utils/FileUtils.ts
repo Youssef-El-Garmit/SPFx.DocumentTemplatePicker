@@ -11,6 +11,38 @@ export class FileUtils {
   }
 
   /**
+   * Convert template extension to document extension.
+   * When creating a document from a template, the final file should have
+   * the document extension, not the template extension.
+   * E.g., .dotx -> .docx, .xltx -> .xlsx, .potx -> .pptx
+   */
+  static getDocumentExtension(templateExtension: string): string {
+    const ext = templateExtension.toLowerCase();
+    const templateToDocumentMap: Record<string, string> = {
+      'dotx': 'docx',
+      'dotm': 'docm',
+      'dot': 'doc',
+      'xltx': 'xlsx',
+      'xltm': 'xlsm',
+      'xlt': 'xls',
+      'potx': 'pptx',
+      'potm': 'pptm',
+      'pot': 'ppt'
+    };
+    return templateToDocumentMap[ext] || ext;
+  }
+
+  /**
+   * Check if a file extension is a template format that should be converted
+   * to a document format when creating a new file from it.
+   */
+  static isTemplateExtension(extension: string): boolean {
+    const ext = extension.toLowerCase();
+    const templateExtensions = ['dotx', 'dotm', 'dot', 'xltx', 'xltm', 'xlt', 'potx', 'potm', 'pot'];
+    return templateExtensions.indexOf(ext) !== -1;
+  }
+
+  /**
    * Get Fluent UI icon name based on file extension (Word/Excel/PPT families).
    */
   static getFileIcon(fileName: string): string {

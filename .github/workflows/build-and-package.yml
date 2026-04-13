@@ -1,0 +1,75 @@
+name: Build and Package SPFx Solution
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Increment version
+        id: version
+        run: |
+          # Read current version from package-solution.json
+          CURRENT_VERSION=$(node -p "require('./config/package-solution.json').solution.version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Parse version components (major.minor.patch.build)
+          IFS='.' read -r MAJOR MINOR PATCH BUILD <<< "$CURRENT_VERSION"
+          
+          # Increment build number
+          NEW_BUILD=$((BUILD + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH.$NEW_BUILD"
+          echo "New version: $NEW_VERSION"
+          
+          # Update package-solution.json with new version
+          node -e "
+            const fs = require('fs');
+            const config = require('./config/package-solution.json');
+            config.solution.version = '$NEW_VERSION';
+            fs.writeFileSync('./config/package-solution.json', JSON.stringify(config, null, 2) + '\n');
+          "
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build solution (production)
+        run: npx gulp bundle --ship
+
+      - name: Package solution (production)
+        run: npx gulp package-solution --ship
+
+      - name: Upload sppkg artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spfx-document-template-picker-v${{ steps.version.outputs.version }}
+          path: sharepoint/solution/*.sppkg
+          retention-days: 90
+
+      - name: Commit version bump
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add config/package-solution.json
+          git commit -m "chore: bump version to ${{ steps.version.outputs.version }} [skip ci]"
+          git push
