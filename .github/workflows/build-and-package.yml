@@ -54,10 +54,26 @@ jobs:
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Build solution (production)
-        run: npx gulp bundle --ship 2>&1
+        run: |
+          npx gulp bundle --ship || true
+          # Check if bundle was created successfully
+          if [ ! -d "dist" ]; then
+            echo "Error: Bundle failed - dist folder not created"
+            exit 1
+          fi
+        shell: bash
 
       - name: Package solution (production)
-        run: npx gulp package-solution --ship 2>&1
+        run: |
+          npx gulp package-solution --ship || true
+          # Check if sppkg was created successfully
+          if ! ls sharepoint/solution/*.sppkg 1> /dev/null 2>&1; then
+            echo "Error: Package failed - .sppkg file not created"
+            exit 1
+          fi
+          echo "Package created successfully:"
+          ls -la sharepoint/solution/*.sppkg
+        shell: bash
 
       - name: Upload sppkg artifact
         uses: actions/upload-artifact@v5
