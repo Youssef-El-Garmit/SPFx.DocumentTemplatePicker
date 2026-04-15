@@ -9,6 +9,7 @@ import "@pnp/sp/search";
 import type { ITemplateItem, IFolderItem } from '../IDocumentTemplatePickerProps';
 import { FileUtils } from '../utils/FileUtils';
 import { UrlUtils } from '../utils/UrlUtils';
+import { TemplateConversionService } from './TemplateConversionService';
 
 /**
  * Service for SharePoint operations
@@ -297,7 +298,9 @@ export class SharePointService {
   }
 
   /**
-   * Copy a file from source to destination
+   * Copy a file from source to destination.
+   * For template files (dotx, xltx, potx, etc.), the file is converted to document format
+   * by modifying the internal OOXML content types to prevent corruption when opened.
    */
   async copyFile(
     sourceServerRelativeUrl: string, 
@@ -320,9 +323,24 @@ export class SharePointService {
     const sourceWeb = sourceSp.web;
     const destinationWeb = destinationSp.web;
     
-    // Copy file using copyByPath
-    const sourceFile = sourceWeb.getFileByServerRelativePath(sourceServerRelativeUrl);
-    await sourceFile.copyByPath(destinationServerRelativeUrl, true, true);
+    // Check if source file is a template that needs conversion
+    const sourceExtension = FileUtils.getFileExtension(sourceServerRelativeUrl);
+    const isTemplate = TemplateConversionService.isTemplateExtension(sourceExtension);
+    
+    if (isTemplate) {
+      // For template files, we need to download, convert, and upload
+      // to properly change the OOXML content types
+      await this._copyTemplateAsDocument(
+        sourceWeb,
+        destinationWeb,
+        sourceServerRelativeUrl,
+        destinationServerRelativeUrl
+      );
+    } else {
+      // For non-template files, use simple copy
+      const sourceFile = sourceWeb.getFileByServerRelativePath(sourceServerRelativeUrl);
+      await sourceFile.copyByPath(destinationServerRelativeUrl, true, true);
+    }
     
     // Get the created file
     const createdFile = destinationWeb.getFileByServerRelativePath(destinationServerRelativeUrl);
@@ -333,6 +351,38 @@ export class SharePointService {
       serverRelativeUrl: fileData.ServerRelativeUrl,
       uniqueId: listItemData.UniqueId
     };
+  }
+
+  /**
+   * Copy a template file as a document by converting the OOXML content types.
+   * This downloads the template, modifies the internal [Content_Types].xml,
+   * and uploads the converted document to prevent corruption.
+   */
+  private async _copyTemplateAsDocument(
+    sourceWeb: ReturnType<typeof spfi>['web'],
+    destinationWeb: ReturnType<typeof spfi>['web'],
+    sourceServerRelativeUrl: string,
+    destinationServerRelativeUrl: string
+  ): Promise<void> {
+    // Download the template file as a blob
+    const sourceFile = sourceWeb.getFileByServerRelativePath(sourceServerRelativeUrl);
+    const fileBuffer = await sourceFile.getBuffer();
+    const templateBlob = new Blob([fileBuffer]);
+    
+    // Convert the template to a document by modifying the content types
+    const documentBlob = await TemplateConversionService.convertTemplateToDocument(templateBlob);
+    
+    // Convert blob to ArrayBuffer for upload
+    const documentArrayBuffer = await documentBlob.arrayBuffer();
+    
+    // Extract folder path and filename from destination URL
+    const lastSlashIndex = destinationServerRelativeUrl.lastIndexOf('/');
+    const folderPath = destinationServerRelativeUrl.substring(0, lastSlashIndex);
+    const fileName = destinationServerRelativeUrl.substring(lastSlashIndex + 1);
+    
+    // Upload the converted document to the destination
+    const destinationFolder = destinationWeb.getFolderByServerRelativePath(folderPath);
+    await destinationFolder.files.addUsingPath(fileName, documentArrayBuffer, { Overwrite: true });
   }
 }
 
